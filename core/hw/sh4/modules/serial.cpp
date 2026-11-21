@@ -451,6 +451,20 @@ struct PTYPipe : public SerialPort::Pipe
 			int rc = ::write(tty, &data, 1);
 			(void)rc;
 		}
+		// DC-port patch: also mirror the serial console to a log file so it
+		// can be read programmatically (Flycast's console window is GUI-only).
+		{
+			static FILE *serialLog = nullptr;
+			if (!serialLog) {
+				serialLog = fopen("serial.log", "ab");
+			}
+			if (serialLog) {
+				fputc(data, serialLog);
+				// Flush on newline so a tail of the log is always current.
+				if (data == '\n')
+					fflush(serialLog);
+			}
+		}
 	}
 
 	int available() override {

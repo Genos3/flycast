@@ -14,6 +14,57 @@
 
 #include <mutex>
 #include <deque>
+#include <cstdlib>
+#include <cstdio>
+#include <vector>
+#include <stb_image_write.h>
+
+// DC-port patch: dump guest frames to PNG for frame-level debugging without
+// needing to grab the Windows window externally. Set the environment variable
+// FLYCAST_SHOT_FRAMES to a comma-separated list of guest frame numbers, e.g.
+//   FLYCAST_SHOT_FRAMES=30,60,90,120
+// Each requested frame is written to shot_<frame>.png in the working directory.
+static void dcAutoScreenshot()
+{
+	static bool parsed = false;
+	static std::vector<u32> wanted;
+	static std::vector<bool> taken;
+	static u32 presentedFrames = 0;
+
+	++presentedFrames;
+
+	if (!parsed) {
+		parsed = true;
+		const char* s = getenv("FLYCAST_SHOT_FRAMES");
+		if (s != nullptr) {
+			const char* p = s;
+			while (*p) {
+				char* end = nullptr;
+				unsigned long v = strtoul(p, &end, 10);
+				if (end == p) { ++p; continue; }
+				wanted.push_back((u32)v);
+				p = end;
+				if (*p == ',') ++p;
+			}
+		}
+		taken.assign(wanted.size(), false);
+	}
+
+	for (size_t i = 0; i < wanted.size(); ++i) {
+		if (!taken[i] && presentedFrames >= wanted[i]) {
+			taken[i] = true;
+			std::vector<u8> data;
+			int w = 0, h = 0;
+			if (renderer != nullptr && renderer->GetLastFrame(data, w, h) && !data.empty()) {
+				char name[64];
+				snprintf(name, sizeof(name), "shot_%05u.png", wanted[i]);
+				stbi_flip_vertically_on_write(0);
+				stbi_write_png(name, w, h, 3, data.data(), 0);
+			}
+			break;
+		}
+	}
+}
 
 #ifdef LIBRETRO
 void retro_rend_present();
@@ -268,6 +319,7 @@ private:
 		if (renderer->Present())
 		{
 			presented = true;
+			dcAutoScreenshot();
 			if (!config::ThreadedRendering && !config::VblankPacing && !ggpo::active())
 				emu.getSh4Executor()->Stop();
 #ifdef LIBRETRO
