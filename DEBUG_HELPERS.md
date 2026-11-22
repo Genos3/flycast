@@ -22,6 +22,11 @@ Debug.SerialConsoleEnabled = 1
 On Windows this build is portable, so `emu.cfg` lives next to `flycast.exe`
 (i.e. in `build/`) and is created automatically on the first run.
 
+To avoid the console window covering the game while still getting `serial.log`,
+set `Debug.SerialConsoleEnabled = no` and `Debug.SerialPTY = yes`. The log
+mirror is written independently of the console, so this keeps file logging with
+no extra window.
+
 Notes:
 - Lines usually appear twice: once with a `[DC]` prefix (the KOS debug-log
   layer) and once raw. That is expected.
