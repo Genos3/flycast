@@ -16,54 +16,71 @@
 #include <deque>
 #include <cstdlib>
 #include <cstdio>
+#include <chrono>
 #include <vector>
 #include <stb_image_write.h>
 
 // DC-port patch: dump guest frames to PNG for frame-level debugging without
 // needing to grab the Windows window externally. Set the environment variable
 // FLYCAST_SHOT_FRAMES to a comma-separated list of guest frame numbers, e.g.
-//   FLYCAST_SHOT_FRAMES=30,60,90,120
-// Each requested frame is written to shot_<frame>.png in the working directory.
+//   FLYCAST_SHOT_FRAMES=1,2,3   (presented-frame numbers)
+//   FLYCAST_SHOT_AT=40,52       (seconds since first present)
+// Each requested moment is written to shot_<value>.png in the working directory.
 static void dcAutoScreenshot()
 {
 	static bool parsed = false;
-	static std::vector<u32> wanted;
-	static std::vector<bool> taken;
+	static std::vector<u32> wantedFrames, wantedSeconds;
+	static std::vector<bool> frameTaken, secondTaken;
 	static u32 presentedFrames = 0;
+	static auto startTime = std::chrono::steady_clock::now();
 
 	++presentedFrames;
 
 	if (!parsed) {
 		parsed = true;
-		const char* s = getenv("FLYCAST_SHOT_FRAMES");
-		if (s != nullptr) {
+		auto parseList = [](const char* name, std::vector<u32>& out) {
+			const char* s = getenv(name);
+			if (s == nullptr) return;
 			const char* p = s;
 			while (*p) {
 				char* end = nullptr;
 				unsigned long v = strtoul(p, &end, 10);
 				if (end == p) { ++p; continue; }
-				wanted.push_back((u32)v);
+				out.push_back((u32)v);
 				p = end;
 				if (*p == ',') ++p;
 			}
-		}
-		taken.assign(wanted.size(), false);
+		};
+		parseList("FLYCAST_SHOT_FRAMES", wantedFrames);
+		parseList("FLYCAST_SHOT_AT", wantedSeconds);
+		frameTaken.assign(wantedFrames.size(), false);
+		secondTaken.assign(wantedSeconds.size(), false);
 	}
 
-	for (size_t i = 0; i < wanted.size(); ++i) {
-		if (!taken[i] && presentedFrames >= wanted[i]) {
-			taken[i] = true;
-			std::vector<u8> data;
-			int w = 0, h = 0;
-			if (renderer != nullptr && renderer->GetLastFrame(data, w, h) && !data.empty()) {
-				char name[64];
-				snprintf(name, sizeof(name), "shot_%05u.png", wanted[i]);
-				stbi_flip_vertically_on_write(0);
-				stbi_write_png(name, w, h, 3, data.data(), 0);
-			}
-			break;
+	u32 elapsed = (u32)std::chrono::duration_cast<std::chrono::seconds>(
+		std::chrono::steady_clock::now() - startTime).count();
+
+	auto capture = [&](u32 value) {
+		std::vector<u8> data;
+		int w = 0, h = 0;
+		if (renderer != nullptr && renderer->GetLastFrame(data, w, h) && !data.empty()) {
+			char name[64];
+			snprintf(name, sizeof(name), "shot_%05u.png", value);
+			stbi_flip_vertically_on_write(0);
+			stbi_write_png(name, w, h, 3, data.data(), 0);
 		}
-	}
+	};
+
+	for (size_t i = 0; i < wantedFrames.size(); ++i)
+		if (!frameTaken[i] && presentedFrames >= wantedFrames[i]) {
+			frameTaken[i] = true;
+			capture(wantedFrames[i]);
+		}
+	for (size_t i = 0; i < wantedSeconds.size(); ++i)
+		if (!secondTaken[i] && elapsed >= wantedSeconds[i]) {
+			secondTaken[i] = true;
+			capture(wantedSeconds[i]);
+		}
 }
 
 #ifdef LIBRETRO

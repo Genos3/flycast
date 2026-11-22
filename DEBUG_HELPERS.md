@@ -31,28 +31,32 @@ Notes:
 
 ## 2. Guest frame screenshots -> `shot_00030.png`, ...
 
-Set the environment variable `FLYCAST_SHOT_FRAMES` to a comma-separated list
-of **presented-frame** numbers before launching Flycast. Each requested frame
-is written as `shot_<frame>.png` in the working directory.
+Two triggers are available, both comma-separated and both writing
+`shot_<value>.png` into the working directory:
+
+- `FLYCAST_SHOT_FRAMES=1,2,3,5` — capture at **presented-frame** numbers.
+- `FLYCAST_SHOT_AT=10,20,40` — capture when **elapsed seconds** since the first
+  present cross each value. Useful for comparing a scene at different times.
 
 Windows (PowerShell):
 
 ```powershell
 $env:FLYCAST_SHOT_FRAMES = "1,2,3,5,10"
+$env:FLYCAST_SHOT_AT = "20,40"
 .\flycast.exe "C:\path\to\game.cdi"
 ```
 
 Bash / MSYS2:
 
 ```bash
-FLYCAST_SHOT_FRAMES=1,2,3,5 ./flycast.exe game.cdi
+FLYCAST_SHOT_FRAMES=1,2,3,5 FLYCAST_SHOT_AT=20,40 ./flycast.exe game.cdi
 ```
 
 Notes:
-- Frames count calls to `Present()`, not the guest PVR frame counter. A 2D-only
-  guest may present only a handful of frames in the first tens of seconds
-  (the Mu Online DC port presents about five times in 20 s), so use small
-  numbers. If a requested frame is skipped, the next presented frame is used.
+- Frames count calls to `Present()`, not the guest PVR frame counter. A guest
+  may present only a handful of frames in the first tens of seconds, so use
+  small frame numbers — or use `FLYCAST_SHOT_AT` for time-based comparisons.
+  If a requested frame is skipped, the next presented frame is used.
 - The capture is the renderer's last guest framebuffer, at full resolution —
   no emulator UI or overlay is included.
 - For guests whose 2D path leaves the offscreen framebuffer empty, this
