@@ -94,6 +94,8 @@ static void gui_settings_advanced()
     header(T("Other"));
     {
     	OptionCheckbox(T("HLE BIOS"), config::UseReios, T("Force high-level BIOS emulation"));
+    	OptionCheckbox(T("GD-ROM Fast Loading"), config::FastGDRomLoad,
+    		T("Simulate a fast GD-ROM drive: remove transfer delays (inaccurate, speeds up loading)"));
         OptionCheckbox(T("Multi-threaded emulation"), config::ThreadedRendering,
         		T("Run the emulated CPU and GPU on different threads"));
 #if !defined(__ANDROID) && !defined(GDB_SERVER)

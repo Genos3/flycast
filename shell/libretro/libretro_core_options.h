@@ -736,11 +736,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
          { "enabled",  NULL },
          { NULL, NULL },
       },
-#ifdef LOW_END
       "enabled",
-#else
-      "disabled",
-#endif
    },
    {
       CORE_OPTION_NAME "_dc_32mb_mod",
