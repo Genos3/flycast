@@ -456,7 +456,7 @@ struct PTYPipe : public SerialPort::Pipe
 		{
 			static FILE *serialLog = nullptr;
 			if (!serialLog) {
-				serialLog = fopen("serial.log", "ab");
+				serialLog = fopen("serial.log", "wb");   // fresh log per process
 			}
 			if (serialLog) {
 				fputc(data, serialLog);

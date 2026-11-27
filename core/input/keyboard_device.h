@@ -91,6 +91,18 @@ protected:
 		const int port = maple_port();
 		const bool portIsValid = port >= 0 && port < MAPLE_PORTS;
 
+		// Close Game must work during gameplay even when an emulated keyboard
+		// is active (other system keys then require the bypass hotkey).
+		// Only when the user has actually mapped it.
+		const u32 closeKey = input_mapper->get_button_code(0, EMU_BTN_CLOSE_GAME);
+		if (!gui_is_open() && closeKey != 0 && keycode == closeKey)
+		{
+			set_maple_port(-1);
+			gamepad_btn_input(keycode, pressed);
+			set_maple_port(port);
+			return;
+		}
+
 		// Checking if we're in-game with an emulated keyboard first,
 		// then check if the "Bypass Emulated Keyboard" hotkey is held and we're not in GUI,
 		// if so: send emu hotkeys only and return earlier.

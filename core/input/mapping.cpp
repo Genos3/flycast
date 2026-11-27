@@ -69,6 +69,7 @@ button_list[] =
 	{ EMU_BTN_SAVESTATE_RAM, "emulator", "btn_quick_save_ram" },
 	{ EMU_BTN_BYPASS_KB, "emulator", "btn_bypass_kb" },
 	{ EMU_BTN_SCREENSHOT, "emulator", "btn_screenshot" },
+	{ EMU_BTN_CLOSE_GAME, "emulator", "btn_close_game" },
 };
 
 static struct

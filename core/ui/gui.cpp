@@ -466,6 +466,15 @@ void gui_start_game(const std::string& path)
 	gameLoader.load(path);
 }
 
+void gui_close_game()
+{
+	// Always return to the main menu, even for command-line launches.
+	const LockGuard lock(guiMutex);
+	emu.unloadGame();
+	gui_setState(GuiState::Main);
+	reset_vmus();
+}
+
 void gui_stop_game(const std::string& message)
 {
 	const LockGuard lock(guiMutex);
